@@ -19,8 +19,8 @@ def Run_All_Tests():
     Test_add_subtract()"""
 
 def Test_add():
-    parsed = parse('4+56')
-    template = ['4','+','56']
+    parsed = parse('4 + 56')
+    template = ['4','56', '+']
     assert(parsed == template)
     
     parsed = parse('4+56+6+40')
@@ -59,30 +59,36 @@ opers = {
 # character is an operator or a number
 def setup_input(inp = None):
     if inp is None:
-        inp = input('expression: ')
+        inp = raw_input('expression: ')
 
     #remove whitespace and create tokens
     tokens = inp.strip().split()
-    tokenvals = []
+    tokenized = []
 
     for token in tokens:
         if token in opers:
-            tokenvals.append((token,opers[token]))
+            tokenized.append((token,opers[token]))
         elif (token.isdigit() == True):
-            tokenvals.append(('NUM', token))
+            tokenized.append(('NUM', token))
         else:
             return 0
-    return tokenvals
+    return tokenized
 
 
 
 #This function will parse the input using the Shunting-yard algorithm
 # and yield a string to be interpreted using Reverse Polish notation 
-def shunting_yard(tokenvals):
+def shunting_yard(tokens):
     outputQ = []
     operstack = []
 
-    for token, val in tokenvals:
+    for token, val in tokens:
+        print "outputQ: "
+        print outputQ
+        print "operstack: " 
+        print operstack
+        pdb.set_trace()
+
         #if we have a number
         if token is 'NUM':
             outputQ.append(val)
@@ -92,8 +98,8 @@ def shunting_yard(tokenvals):
             while operstack:
                 t2, prec2 = operstack[-1]
                 if ( token != '^' and prec1 <= prec2) or (token == '^' and prec1 < prec2):
-                        if t1 != '(':
-                            if t1 != ')':
+                        if t1 != ')':
+                            if t1 != '(':
                                 operstack.pop()
                                 outputQ.append(t2)
                             else:
@@ -116,49 +122,49 @@ def shunting_yard(tokenvals):
     return outputQ
 
 
+def parse(rawstring):
+
+    tokenized = setup_input(rawstring)
+    if tokenized == 0:
+        print "Invalid input"
+        return False
+    print tokenized
+    formatted = shunting_yard(tokenized)
+    return formatted
 
 
-
+formatted = parse('3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3')
+print formatted
 
 
 #Main
-
-print "#########################################################"
-print "First we run unit tests"
-print "..."
-Run_All_Tests()
-print "Done with unit tests"
-print "#########################################################"
-
-
-#create game board
-print "\nWelcome to the Calculator"
-
-while True:
-    #Capture user input string
-    rawstring = raw_input("Enter your calculation: ")
-    """for i in string:
-        pass
-        if i.isalpha()
-            print "Invalid input"
-            break"""
-    #rawstring = rawstring.upper()
-    print(rawstring)
-
-    tokenvals = setup_input(rawstring)
-    if tokenvals == 0:
-        print "Invalid input"
-        continue
-    print tokenvals
-    formatted = shunting_yard(tokenvals)
-    print formatted
+def main():
+    print "#########################################################"
+    print "First we run unit tests"
+    print "..."
+    Run_All_Tests()
+    print "Done with unit tests"
+    print "#########################################################"
 
 
-    """
-    #Go through each index in the list and perform operations as necessary
-    for i,char in enumerate(string):
-        if (char == '+'):
-            if (string[i-1].isdigit and string[i+1]):
-    """
+    #create game board
+    print "\nWelcome to the Calculator"
 
-print "\n"
+    while True:
+        #Capture user input string
+        #rawstring = raw_input("Enter your calculation: ")
+        rawstring = get_input()
+        print(rawstring)
+
+
+        formatted = parse(rawstring)
+        print formatted
+
+        """
+        #Go through each index in the list and perform operations as necessary
+        for i,char in enumerate(string):
+            if (char == '+'):
+                if (string[i-1].isdigit and string[i+1]):
+        """
+
+    print "\n"
