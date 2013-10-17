@@ -4,15 +4,19 @@ import re
 import string
 import pdb
 
+######
+#TODO:
+#   enable without whitespace in input string
+
 
 ###########################################################
 # UNIT TESTS
 
 #Run unit tests
 def Run_All_Tests():
-    Test_add()
+    """Test_add()
     Test_subtract()
-    Test_add_subtract()
+    Test_add_subtract()"""
 
 def Test_add():
     parsed = parse('4+56')
@@ -40,21 +44,81 @@ def Test_add_subtract():
 
 ###########################################################
 
-def parse(string):
-    
-    # Handle addition / subtraction
-    for i,char in enumerate(string):
-        if char == '+' or char == '-':
-            #pdb.set_trace()
-            lt = string[:i]
-            rt = string[(i+1):]
-            if (lt.isdigit() != True):
-                lt=parse(lt)
-            #pdb.set_trace()
-            if (rt.isdigit() != True):
-                rt=parse(rt)
-            break
-    return [lt, char, rt]
+opers = {
+    '+':    2,
+    '-':    2,
+    '*':    3,
+    '/':    3,
+    '^':    4,
+    '(':    9,
+    ')':    0
+}
+
+
+#This function sets up the input string by recognizing whether a
+# character is an operator or a number
+def setup_input(inp = None):
+    if inp is None:
+        inp = input('expression: ')
+
+    #remove whitespace and create tokens
+    tokens = inp.strip().split()
+    tokenvals = []
+
+    for token in tokens:
+        if token in opers:
+            tokenvals.append((token,opers[token]))
+        elif (token.isdigit() == True):
+            tokenvals.append(('NUM', token))
+        else:
+            return 0
+    return tokenvals
+
+
+
+#This function will parse the input using the Shunting-yard algorithm
+# and yield a string to be interpreted using Reverse Polish notation 
+def shunting_yard(tokenvals):
+    outputQ = []
+    operstack = []
+
+    for token, val in tokenvals:
+        #if we have a number
+        if token is 'NUM':
+            outputQ.append(val)
+        #if we have an operator
+        elif token in opers:
+            t1, prec1 = token,val
+            while operstack:
+                t2, prec2 = operstack[-1]
+                if ( token != '^' and prec1 <= prec2) or (token == '^' and prec1 < prec2):
+                        if t1 != '(':
+                            if t1 != ')':
+                                operstack.pop()
+                                outputQ.append(t2)
+                            else:
+                                break
+                        else:
+                            if t2 != '(':
+                                operstack.pop()
+                                outputQ.append(t2)
+                            else:
+                                operstack.pop()
+                                break
+                else:
+                    break
+            if t1 != ')':
+                operstack.append((token,val))
+    while operstack:
+        t2, prec2 = operstack[-1]
+        operstack.pop()
+        outputQ.append(t2)
+    return outputQ
+
+
+
+
+
 
 
 #Main
@@ -81,14 +145,13 @@ while True:
     #rawstring = rawstring.upper()
     print(rawstring)
 
-    #Replace each '(' with '[' and ')' with ']'
-    """
-    #Parse input string and save as a list
-    string = re.split('([+-])',rawstring)
-    print string
-    """
-    smita = parse(rawstring)
-    print smita
+    tokenvals = setup_input(rawstring)
+    if tokenvals == 0:
+        print "Invalid input"
+        continue
+    print tokenvals
+    formatted = shunting_yard(tokenvals)
+    print formatted
 
 
     """
