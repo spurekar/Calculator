@@ -9,13 +9,17 @@ import pdb
 #   enable without whitespace in input string
 
 
+class UnmatchedParenError(Exception):
+    pass
+
+
 ###########################################################
 # UNIT TESTS
 
 #Run unit tests
 def Run_All_Tests():
-    """Test_add()
-    Test_subtract()
+    Test_add()
+    """Test_subtract()
     Test_add_subtract()"""
 
 def Test_add():
@@ -45,13 +49,11 @@ def Test_add_subtract():
 ###########################################################
 
 opers = {
-    '+':    2,
-    '-':    2,
-    '*':    3,
-    '/':    3,
-    '^':    4,
-    '(':    9,
-    ')':    0
+    '+':    (2,'L'),
+    '-':    (2,'L'),
+    '*':    (3,'L'),
+    '/':    (3,'L'),
+    '^':    (4,'R'),
 }
 
 
@@ -68,6 +70,8 @@ def setup_input(inp = None):
     for token in tokens:
         if token in opers:
             tokenized.append((token,opers[token]))
+        elif token == '(' or token == ')':
+            tokenized.append(('PAREN',token))
         elif (token.isdigit() == True):
             tokenized.append(('NUM', token))
         else:
@@ -83,41 +87,40 @@ def shunting_yard(tokens):
     operstack = []
 
     for token, val in tokens:
+        print '\n'
         print "outputQ: "
         print outputQ
         print "operstack: " 
         print operstack
-        pdb.set_trace()
+        #pdb.set_trace()
 
         #if we have a number
         if token is 'NUM':
             outputQ.append(val)
         #if we have an operator
         elif token in opers:
-            t1, prec1 = token,val
-            while operstack:
-                t2, prec2 = operstack[-1]
-                if ( token != '^' and prec1 <= prec2) or (token == '^' and prec1 < prec2):
-                        if t1 != ')':
-                            if t1 != '(':
-                                operstack.pop()
-                                outputQ.append(t2)
-                            else:
-                                break
-                        else:
-                            if t2 != '(':
-                                operstack.pop()
-                                outputQ.append(t2)
-                            else:
-                                operstack.pop()
-                                break
+            t1, (prec1,asso1) = token,val
+            while operstack and  operstack[-1][0] in opers:               
+                t2, (prec2,asso2) = operstack[-1]
+                if (asso1 == 'L' and prec1 == prec2) or (prec1 < prec2):
+                    outputQ.append(operstack.pop()[0])
                 else:
                     break
-            if t1 != ')':
-                operstack.append((token,val))
+            operstack.append((t1,(prec1,asso1)))
+        elif val == '(':
+            operstack.append((token,val))
+        elif val == ')':
+            try:
+                while operstack[-1][1] != '(':
+                    outputQ.append(operstack.pop()[0])
+            except KeyError:
+                raise UnmatchedParenError()
+            operstack.pop()
+            
     while operstack:
-        t2, prec2 = operstack[-1]
-        operstack.pop()
+        t2, val = operstack.pop()
+        if val == '(':
+            raise UnmatchedParenError()
         outputQ.append(t2)
     return outputQ
 
