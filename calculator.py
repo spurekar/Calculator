@@ -9,9 +9,6 @@ import pdb
 #   enable without whitespace in input string
 
 
-class UnmatchedParenError(Exception):
-    pass
-
 
 ###########################################################
 # UNIT TESTS
@@ -19,31 +16,100 @@ class UnmatchedParenError(Exception):
 #Run unit tests
 def Run_All_Tests():
     Test_add()
-    """Test_subtract()
-    Test_add_subtract()"""
+    Test_subtract()
+    Test_add_subtract()
+    Test_multiply()
+    Test_divide()
+    Test_multiply_divide()
+    Test_exponent()
+    Test_combos()
+    Test_misc()
 
 def Test_add():
     parsed = parse('4 + 56')
     template = ['4','56', '+']
     assert(parsed == template)
     
-    parsed = parse('4+56+6+40')
-    template = ['4','+',['56','+',['6','+','40']]]
+    parsed = parse('4 + 56 + 6 + 40')
+    template = ['4','56','+','6','+','40','+']
     assert(parsed == template)
 
 def Test_subtract():
-    parsed = parse('4-56')
-    template = ['4','-','56']
+    parsed = parse('4 - 56')
+    template = ['4','56','-']
     assert(parsed == template)
     
-    parsed = parse('4-56-6-40')
-    template = ['4','-',['56','-',['6','-','40']]]
+    parsed = parse('4 - 56 - 6 - 40')
+    template = ['4','56','-','6','-','40','-']
     assert(parsed == template)
 
 def Test_add_subtract():
-    parsed = parse('4+5-6')
-    template = ['4','+',['5','-','6']]
+    parsed = parse('4 + 5 - 6')
+    template = ['4','5','+','6','-']
     assert(parsed == template)
+
+    parsed = parse('4 + ( 5 - 6 )')
+    template = ['4','5','6','-','+']
+    assert(parsed == template)
+
+def Test_multiply():
+    parsed = parse(' 4 * 87 ')
+    template = ['4','87','*']
+    assert(parsed == template)
+
+    parsed = parse('3 * 90 * 4')
+    template = ['3','90','*','4','*']
+    assert(parsed == template)
+
+def Test_divide():
+    parsed = parse(' 4 / 87 ')
+    template = ['4','87','/']
+    assert(parsed == template)
+
+    parsed = parse('3 / 90 / 4')
+    template = ['3','90','/','4','/']
+    assert(parsed == template)
+
+def Test_multiply_divide():
+    parsed = parse('4 * 5 / 56')
+    template = ['4','5','*','56','/']
+    assert(parsed == template)
+
+    parsed = parse('4 * ( 5 / 32 )')
+    template = ['4','5','32','/','*']
+    assert(parsed == template)
+
+    parsed = parse('1 * 434345 / 78953 * 21145 / 85241')
+    template = ['1','434345','*','78953','/','21145','*','85241','/']
+    assert(parsed == template)
+
+def Test_exponent():
+    parsed = parse(' 3 ^ 4 ')
+    template = ['3','4','^']
+    assert(parsed == template)
+
+    parsed = parse(' 3 ^ 4 ^ 5')
+    template = ['3','4','5','^','^']
+    assert(parsed == template)
+
+    parsed = parse(' 3 ^ ( 4 ^ 5 ) ^ 6')
+    template = ['3','4','5','^','6','^','^']
+    assert(parsed == template)
+
+def Test_combos():
+    parsed = parse('3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3')
+    template = ['3','4','2','*','1','5','-','2','3','^','^','/','+']
+    assert(parsed == template)
+
+def Test_misc():
+    parsed = parse('( ( 4 + 5 ) * 6 )')
+    template = ['4','5','+','6','*']
+    assert(parsed == template)
+
+    parsed = parse('')
+    template = []
+    assert(parsed == template)
+
 
 
 ###########################################################
@@ -69,7 +135,7 @@ def setup_input(inp = None):
 
     for token in tokens:
         if token in opers:
-            tokenized.append((token,opers[token]))
+            tokenized.append(('OPER', (token, opers[token][0], opers[token][1])))
         elif token == '(' or token == ')':
             tokenized.append(('PAREN',token))
         elif (token.isdigit() == True):
@@ -87,41 +153,40 @@ def shunting_yard(tokens):
     operstack = []
 
     for token, val in tokens:
-        print '\n'
+        """print '\n'
         print "outputQ: "
         print outputQ
         print "operstack: " 
-        print operstack
-        #pdb.set_trace()
+        print operstack"""
 
         #if we have a number
         if token is 'NUM':
             outputQ.append(val)
         #if we have an operator
-        elif token in opers:
-            t1, (prec1,asso1) = token,val
-            while operstack and  operstack[-1][0] in opers:               
-                t2, (prec2,asso2) = operstack[-1]
+        elif token is 'OPER':
+            t1, prec1, asso1 = val
+            while operstack and operstack[-1][0] is 'OPER':               
+                t2, prec2, asso2 = operstack[-1][1]
                 if (asso1 == 'L' and prec1 == prec2) or (prec1 < prec2):
-                    outputQ.append(operstack.pop()[0])
+                    outputQ.append(operstack.pop()[1][0])
                 else:
                     break
-            operstack.append((t1,(prec1,asso1)))
+            operstack.append((token,val))
         elif val == '(':
             operstack.append((token,val))
         elif val == ')':
             try:
-                while operstack[-1][1] != '(':
-                    outputQ.append(operstack.pop()[0])
+                while operstack[-1][0] is not 'PAREN':
+                    outputQ.append(operstack.pop()[1][0])
             except KeyError:
-                raise UnmatchedParenError()
+                return -1
             operstack.pop()
             
     while operstack:
         t2, val = operstack.pop()
-        if val == '(':
-            raise UnmatchedParenError()
-        outputQ.append(t2)
+        if t2 is 'PAREN':
+            return -1
+        outputQ.append(val[0])
     return outputQ
 
 
@@ -131,13 +196,8 @@ def parse(rawstring):
     if tokenized == 0:
         print "Invalid input"
         return False
-    print tokenized
     formatted = shunting_yard(tokenized)
     return formatted
-
-
-formatted = parse('3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3')
-print formatted
 
 
 #Main
@@ -155,19 +215,16 @@ def main():
 
     while True:
         #Capture user input string
-        #rawstring = raw_input("Enter your calculation: ")
-        rawstring = get_input()
-        print(rawstring)
-
+        rawstring = raw_input("Enter your calculation: ")
+        print("Your input was: " + rawstring)
 
         formatted = parse(rawstring)
-        print formatted
-
-        """
-        #Go through each index in the list and perform operations as necessary
-        for i,char in enumerate(string):
-            if (char == '+'):
-                if (string[i-1].isdigit and string[i+1]):
-        """
+        if formatted == -1:
+            print "Error! You had unmatched parenthesis. Try again"
+        else:
+            print formatted
 
     print "\n"
+
+
+main()
