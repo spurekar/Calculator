@@ -24,6 +24,7 @@ def Run_All_Tests():
     Test_exponent()
     Test_combos()
     Test_misc()
+    Test_RPN()
 
 def Test_add():
     parsed = parse('4 + 56')
@@ -110,7 +111,17 @@ def Test_misc():
     template = []
     assert(parsed == template)
 
+def Test_RPN():
+    inputs = ['5','4','+']
+    ans = reverse_polish(inputs)
+    assert(ans == 9)
 
+    inputs = ['5','1','2','+','4','*','+','3','-']
+    ans = reverse_polish(inputs)
+    assert(ans == 14)
+
+    ans = reverse_polish(parse('3 + 4 * 2 / ( 1 - 5 ) ^ 2 ^ 3'))
+    assert(int(ans) == 3)
 
 ###########################################################
 
@@ -189,6 +200,40 @@ def shunting_yard(tokens):
         outputQ.append(val[0])
     return outputQ
 
+#This function will take an input in posfix notation and apply the
+# Reverse Polish Notation algorithm to yield an solution
+def reverse_polish(inputs):
+    stack = []
+
+    for token in inputs:
+        if token in opers:
+            stack = handle_oper(token,stack)
+        else:
+            stack.append(float(token))
+
+    if len(stack) == 1:
+        return stack[0]
+    else:
+        return -1
+
+    
+def handle_oper(oper,stack):
+    one = stack.pop()
+    two = stack.pop()
+
+    if oper == '+':
+        stack.append(one + two)
+    elif oper == '-':
+        stack.append(two - one)
+    elif oper == '*':
+        stack.append(one * two)
+    elif oper == '/':
+        stack.append(two / one)
+    else:
+        stack.append(two ** one)
+
+    return stack
+
 
 def parse(rawstring):
 
@@ -223,7 +268,8 @@ def main():
             print "Error! You had unmatched parenthesis. Try again"
         else:
             print formatted
-
+            ans = reverse_polish(formatted)
+            print ans
     print "\n"
 
 
